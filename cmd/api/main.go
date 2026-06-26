@@ -9,8 +9,10 @@ import (
 	"syscall"
 
 	"github.com/matheusantiquera/minhas-rifas/config"
+	"github.com/matheusantiquera/minhas-rifas/internal/user"
 	"github.com/matheusantiquera/minhas-rifas/pkg/logger"
 	"github.com/matheusantiquera/minhas-rifas/pkg/mongodb"
+	pkgvalidator "github.com/matheusantiquera/minhas-rifas/pkg/validator"
 )
 
 func main() {
@@ -30,9 +32,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = mongodb.GetDatabase(mongoClient, cfg.MongoDatabaseName)
+	db := mongodb.GetDatabase(mongoClient, cfg.MongoDatabaseName)
+	validate := pkgvalidator.New()
+
+	userRepository := user.NewRepository(db)
+	userService := user.NewService(validate, userRepository)
+	userHandler := user.NewHandler(userService)
 
 	mux := http.NewServeMux()
+	userHandler.RegisterRoutes(mux)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Port),
