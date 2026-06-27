@@ -1,6 +1,10 @@
 package raffle
 
-import "time"
+import (
+	"time"
+
+	"github.com/matheusantiquera/minhas-rifas/domain"
+)
 
 type CreateInput struct {
 	Title       string    `json:"title" validate:"required"`
@@ -8,4 +12,9 @@ type CreateInput struct {
 	ValueTicket float64   `json:"value_ticket" validate:"required,gt=0"`
 	UserID      int       `json:"user_id" validate:"required"`
 	DrawDate    time.Time `json:"draw_date" validate:"required"`
+}
+
+type GetResponse struct {
+	domain.Raffle
+	TicketsSold int64 `json:"tickets_sold"`
 }

@@ -76,7 +76,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	raffle, err := h.service.Get(r.Context(), raffleID)
+	detail, err := h.service.Get(r.Context(), raffleID)
 	if err != nil {
 		if errors.Is(err, ErrRaffleNotFound) {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
@@ -87,7 +87,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, raffle)
+	writeJSON(w, http.StatusOK, detail)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

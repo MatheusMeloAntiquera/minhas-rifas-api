@@ -42,10 +42,11 @@ func main() {
 	userHandler := user.NewHandler(userService, log)
 
 	raffleRepository := raffle.NewRepository(db)
-	raffleService := raffle.NewService(validate, raffleRepository, userRepository, log)
+	ticketRepository := ticket.NewRepository(db)
+
+	raffleService := raffle.NewService(validate, raffleRepository, userRepository, ticketRepository, log)
 	raffleHandler := raffle.NewHandler(raffleService, log)
 
-	ticketRepository := ticket.NewRepository(db)
 	ticketService := ticket.NewService(validate, ticketRepository, userRepository, raffleRepository, log)
 	ticketHandler := ticket.NewHandler(ticketService, log)
 

@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, ticket domain.Ticket) (domain.Ticket, error)
 	List(ctx context.Context, userID int, filters ListFilters) ([]domain.Ticket, error)
+	CountByRaffle(ctx context.Context, raffleID int) (int64, error)
 }
 
 type repository struct {
@@ -77,4 +78,8 @@ func (r *repository) List(ctx context.Context, userID int, filters ListFilters) 
 	}
 
 	return tickets, nil
+}
+
+func (r *repository) CountByRaffle(ctx context.Context, raffleID int) (int64, error) {
+	return r.collection.CountDocuments(ctx, bson.M{"raffle_id": raffleID})
 }
