@@ -13,6 +13,7 @@ type Repository interface {
 	Create(ctx context.Context, user domain.User) (domain.User, error)
 	Update(ctx context.Context, id int, user domain.User) (domain.User, error)
 	Delete(ctx context.Context, id int) error
+	FindByID(ctx context.Context, id int) (*domain.User, error)
 	FindByEmail(ctx context.Context, email string) (*domain.User, error)
 }
 
@@ -100,6 +101,18 @@ func (r *repository) Delete(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+func (r *repository) FindByID(ctx context.Context, id int) (*domain.User, error) {
+	filter := bson.M{"_id": id}
+
+	var user domain.User
+	err := r.collection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *repository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {

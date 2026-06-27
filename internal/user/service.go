@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -24,12 +25,14 @@ type Service interface {
 type service struct {
 	validate   *validator.Validate
 	repository Repository
+	logger     *slog.Logger
 }
 
-func NewService(validate *validator.Validate, repository Repository) Service {
+func NewService(validate *validator.Validate, repository Repository, logger *slog.Logger) Service {
 	return &service{
 		validate:   validate,
 		repository: repository,
+		logger:     logger,
 	}
 }
 
@@ -40,6 +43,7 @@ func (s *service) Create(ctx context.Context, input CreateInput) (domain.User, e
 
 	existing, err := s.repository.FindByEmail(ctx, input.Email)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		s.logger.Error("falha ao buscar usuário por email", "error", err)
 		return domain.User{}, err
 	}
 	if existing != nil {
@@ -73,6 +77,7 @@ func (s *service) Update(ctx context.Context, id int, input UpdateInput) (domain
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domain.User{}, ErrUserNotFound
 		}
+		s.logger.Error("falha ao atualizar usuário", "error", err, "id", id)
 		return domain.User{}, err
 	}
 
@@ -85,6 +90,7 @@ func (s *service) Delete(ctx context.Context, id int) error {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return ErrUserNotFound
 		}
+		s.logger.Error("falha ao deletar usuário", "error", err, "id", id)
 		return err
 	}
 

@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/matheusantiquera/minhas-rifas/config"
+	"github.com/matheusantiquera/minhas-rifas/internal/raffle"
 	"github.com/matheusantiquera/minhas-rifas/internal/user"
 	"github.com/matheusantiquera/minhas-rifas/pkg/logger"
 	"github.com/matheusantiquera/minhas-rifas/pkg/mongodb"
@@ -36,11 +37,16 @@ func main() {
 	validate := pkgvalidator.New()
 
 	userRepository := user.NewRepository(db)
-	userService := user.NewService(validate, userRepository)
-	userHandler := user.NewHandler(userService)
+	userService := user.NewService(validate, userRepository, log)
+	userHandler := user.NewHandler(userService, log)
+
+	raffleRepository := raffle.NewRepository(db)
+	raffleService := raffle.NewService(validate, raffleRepository, userRepository, log)
+	raffleHandler := raffle.NewHandler(raffleService, log)
 
 	mux := http.NewServeMux()
 	userHandler.RegisterRoutes(mux)
+	raffleHandler.RegisterRoutes(mux)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Port),
