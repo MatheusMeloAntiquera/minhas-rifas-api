@@ -74,6 +74,7 @@ func (s *service) Update(ctx context.Context, id int, input UpdateInput) (domain
 
 	updated, err := s.repository.Update(ctx, id, user)
 	if err != nil {
+		//TODO: mover essa validação para o repositorio
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domain.User{}, ErrUserNotFound
 		}
@@ -87,6 +88,7 @@ func (s *service) Update(ctx context.Context, id int, input UpdateInput) (domain
 func (s *service) Delete(ctx context.Context, id int) error {
 	err := s.repository.Delete(ctx, id)
 	if err != nil {
+		//TODO: mover essa validação para o repositorio
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return ErrUserNotFound
 		}

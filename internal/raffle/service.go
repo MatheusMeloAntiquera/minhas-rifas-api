@@ -9,14 +9,18 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/matheusantiquera/minhas-rifas/domain"
 	"github.com/matheusantiquera/minhas-rifas/internal/user"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 var (
-	ErrUserNotFound = errors.New("usuário não encontrado")
+	ErrUserNotFound   = errors.New("usuário não encontrado")
+	ErrRaffleNotFound = errors.New("rifa não encontrada")
 )
 
 type Service interface {
 	Create(ctx context.Context, input CreateInput) (domain.Raffle, error)
+	ListByUser(ctx context.Context, userID int) ([]domain.Raffle, error)
+	Get(ctx context.Context, id int) (domain.Raffle, error)
 }
 
 type service struct {
@@ -58,4 +62,34 @@ func (s *service) Create(ctx context.Context, input CreateInput) (domain.Raffle,
 	}
 
 	return s.repository.Create(ctx, raffle)
+}
+
+func (s *service) ListByUser(ctx context.Context, userID int) ([]domain.Raffle, error) {
+	_, err := s.userRepository.FindByID(ctx, userID)
+	if err != nil {
+		s.logger.Error("usuário não encontrado para listagem de rifas", "error", err, "user_id", userID)
+		return nil, ErrUserNotFound
+	}
+
+	raffles, err := s.repository.ListByUser(ctx, userID)
+	if err != nil {
+		s.logger.Error("falha ao listar rifas do usuário", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	return raffles, nil
+}
+
+func (s *service) Get(ctx context.Context, id int) (domain.Raffle, error) {
+	raffle, err := s.repository.FindByID(ctx, id)
+	if err != nil {
+		//TODO: mover essa validação para o repositorio
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return domain.Raffle{}, ErrRaffleNotFound
+		}
+		s.logger.Error("falha ao buscar rifa", "error", err, "id", id)
+		return domain.Raffle{}, err
+	}
+
+	return *raffle, nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 )
 
 type Handler struct {
@@ -18,6 +19,8 @@ func NewHandler(service Service, logger *slog.Logger) *Handler {
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /raffles", h.Create)
+	mux.HandleFunc("GET /users/{id}/raffles", h.ListByUser)
+	mux.HandleFunc("GET /users/{id}/raffles/{raffle_id}", h.Get)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +44,50 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, raffle)
+}
+
+func (h *Handler) ListByUser(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		h.logger.Error("id inválido na requisição", "error", err)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id inválido"})
+		return
+	}
+
+	raffles, err := h.service.ListByUser(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+			return
+		}
+		h.logger.Error("falha ao listar rifas do usuário", "error", err, "user_id", id)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "erro interno"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, raffles)
+}
+
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+	raffleID, err := strconv.Atoi(r.PathValue("raffle_id"))
+	if err != nil {
+		h.logger.Error("raffle_id inválido na requisição", "error", err)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "raffle_id inválido"})
+		return
+	}
+
+	raffle, err := h.service.Get(r.Context(), raffleID)
+	if err != nil {
+		if errors.Is(err, ErrRaffleNotFound) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+			return
+		}
+		h.logger.Error("falha ao buscar rifa", "error", err, "raffle_id", raffleID)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "erro interno"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, raffle)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

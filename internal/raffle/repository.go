@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, raffle domain.Raffle) (domain.Raffle, error)
 	FindByID(ctx context.Context, id int) (*domain.Raffle, error)
+	ListByUser(ctx context.Context, userID int) ([]domain.Raffle, error)
 }
 
 type repository struct {
@@ -69,4 +70,21 @@ func (r *repository) FindByID(ctx context.Context, id int) (*domain.Raffle, erro
 	}
 
 	return &raffle, nil
+}
+
+func (r *repository) ListByUser(ctx context.Context, userID int) ([]domain.Raffle, error) {
+	filter := bson.M{"user_id": userID}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	raffles := []domain.Raffle{}
+	if err := cursor.All(ctx, &raffles); err != nil {
+		return nil, err
+	}
+
+	return raffles, nil
 }
